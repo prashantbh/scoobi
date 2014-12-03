@@ -33,6 +33,9 @@ object dependencies {
     "com.thoughtworks.xstream"          %  "xstream"                   % "1.4.4"            intransitive(),
     "javassist"                         %  "javassist"                 % "3.12.1.GA",
     "com.googlecode.kiama"              %% "kiama"                     % "1.6.0",
+    "org.apache.hive"					%  "hive-exec"				   % "0.13.0",
+    "org.apache.hive"					%  "hive-serde"				   % "0.13.0",
+    
   if (scalaVersion.contains("2.10"))
     "com.chuusai"                       %  s"shapeless_$scalaVersion"  % "2.0.0"
   else
@@ -42,12 +45,12 @@ object dependencies {
 
   def hadoop(version: String, hadoopVersion: String = "2.2.0") =
 
-    if (version.contains("cdh3"))      Seq("com.nicta" %% "scoobi-compatibility-cdh3"    % "1.0.3")
-    else if (version.contains("cdh4")) Seq("com.nicta" %% "scoobi-compatibility-cdh4"    % "1.0.3")
-    else if (version.contains("cdh5")) Seq("com.nicta" %% "scoobi-compatibility-cdh5"    % "1.0.3")
-    else                               Seq("com.nicta" %% "scoobi-compatibility-hadoop2" % "1.0.3")
+    if (version.contains("cdh3"))      Seq("com.nicta" %% "scoobi-compatibility-cdh3"    % "1.0.2")
+    else if (version.contains("cdh4")) Seq("com.nicta" %% "scoobi-compatibility-cdh4"    % "1.0.2")
+    else if (version.contains("cdh5")) Seq("com.nicta" %% "scoobi-compatibility-cdh5"    % "1.0.2")
+    else                               Seq("com.nicta" %% "scoobi-compatibility-hadoop2" % "1.0.2")
 
-  def scalaz(scalazVersion: String = "7.1.0") = Seq(
+  def scalaz(scalazVersion: String = "7.0.6") = Seq(
     "org.scalaz"                        %% "scalaz-core"               % scalazVersion,
     "org.scalaz"                        %% "scalaz-iteratee"           % scalazVersion,
     "org.scalaz"                        %% "scalaz-concurrent"         % scalazVersion,
@@ -59,7 +62,7 @@ object dependencies {
     "org.apache.thrift"                  % "libthrift"                 % "0.9.1"
   )
 
-  def specs2(specs2Version: String = "2.4.2") = Seq(
+  def specs2(specs2Version: String = "2.4.2-scalaz-7.0.6") = Seq(
     "org.specs2"                        %% "specs2-core"               % specs2Version      % "optional") ++ Seq(
     "org.specs2"                        %% "specs2-mock"               % specs2Version      ,
     "org.specs2"                        %% "specs2-scalacheck"         % specs2Version      ,

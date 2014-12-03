@@ -25,6 +25,8 @@ import io.text.TextInput
 import io.text.TextOutput
 import io.avro.AvroInput
 import io.avro.AvroOutput
+import io.orc.OrcInput
+import io.orc.OrcOutput
 import io.sequence.SequenceInput
 import io.sequence.SequenceOutput
 import impl.mapreducer.BridgeStore
@@ -41,7 +43,7 @@ import java.io.IOException
  * This trait provides way to create DLists from files
  * and to add sinks to DLists so that the results of computations can be saved to files
  */
-trait InputsOutputs extends TextInput with TextOutput with AvroInput with AvroOutput with SequenceInput with SequenceOutput {
+trait InputsOutputs extends TextInput with TextOutput with AvroInput with AvroOutput with SequenceInput with SequenceOutput with OrcInput with OrcOutput{
 
   /** create a DList from a stream of elements which will only be evaluated on the cluster */
   def fromLazySeq[A : WireFormat](seq: =>Seq[A], seqSize: Int = 1000): core.DList[A] = SeqInput.fromLazySeq(() => seq, seqSize)
@@ -178,6 +180,20 @@ trait InputsOutputs extends TextInput with TextOutput with AvroInput with AvroOu
       o.addSink(AvroOutput.avroSink(path, overwrite, check, checkpoint, expiryPolicy))
   }
 
+  
+ /** ORC I/O*/
+  
+ implicit class ListToOrcFile[A](val list: core.DList[A]) {
+    def toOrcFile(path: String, typeString:String, overwrite: Boolean = false, check: Sink.OutputCheck = Sink.defaultOutputCheck)(implicit sc: ScoobiConfiguration) =
+      list.addSink(OrcOutput.orcSink(path, typeString, overwrite, check))
+  }
+   
+ implicit class ObjectToOrcFile[A](val o: core.DObject[A]) {
+    def toOrcFile(path: String, typeString:String, overwrite: Boolean = false, check: Sink.OutputCheck = Sink.defaultOutputCheck)(implicit sc: ScoobiConfiguration) =
+      o.addSink(OrcOutput.orcSink(path, typeString, overwrite, check))
+  } 
+  
+  
   /** checkpoints */
   implicit class ListToCheckpointFile[A](val list: core.DList[A]) {
     def checkpoint(path: String, expiryPolicy: ExpiryPolicy = ExpiryPolicy.default)(implicit sc: ScoobiConfiguration) =
