@@ -81,5 +81,6 @@ object dependencies {
     Resolver.sonatypeRepo("releases"),
     Resolver.sonatypeRepo("snapshots"),
     "cloudera"             at "https://repository.cloudera.com/content/repositories/releases",
-    "hortonworks-releases" at "http://repo.hortonworks.com/content/repositories/releases")
+    "hortonworks-releases" at "http://repo.hortonworks.com/content/repositories/releases",
+    "Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository")
 }

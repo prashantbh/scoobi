@@ -40,9 +40,9 @@ trait DataSink[K, V, B] extends Sink { outer =>
   val id = ids.get
   lazy val stringId = id.toString
 
-  def outputFormat(implicit sc: ScoobiConfiguration): Class[_ <: OutputFormat[K, V]]
+  def outputFormat(implicit sc: ScoobiConfiguration): Class[_ <: OutputFormat[K, _ <: V]]
   def outputKeyClass(implicit sc: ScoobiConfiguration): Class[K]
-  def outputValueClass(implicit sc: ScoobiConfiguration): Class[V]
+  def outputValueClass(implicit sc: ScoobiConfiguration): Class[_ <: V]
   def outputConverter: OutputConverter[K, V, B]
   def outputCheck(implicit sc: ScoobiConfiguration)
   def outputConfigure(job: Job)(implicit sc: ScoobiConfiguration)

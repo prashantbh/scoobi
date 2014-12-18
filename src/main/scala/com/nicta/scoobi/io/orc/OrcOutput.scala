@@ -2,9 +2,11 @@ package com.nicta.scoobi
 package io
 package orc
 
+import scala.collection.JavaConversions._
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.{ TaskAttemptContext, RecordWriter, Job }
+import org.apache.hadoop.mapreduce._
 import core._
 import impl.io.Files
 import org.apache.hadoop.conf.Configuration
@@ -18,32 +20,29 @@ import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.hive.ql.io.orc.OrcNewOutputFormat
 import com.nicta.scoobi.core.DataSource
 import org.apache.hadoop.hive.ql.io.orc.OrcSerde
-import org.apache.hadoop.hive.ql.io.orc.OrcStruct
 import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.{ ObjectInspector , StructObjectInspector}
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 
 /** Functions for persisting distributed lists by storing them as ORC files. */
 trait OrcOutput {
 
-  def orcSink[B](path: String, typeString:String, overwrite: Boolean = false, check: Sink.OutputCheck = Sink.defaultOutputCheck)(implicit sc: ScoobiConfiguration) = {
-
+  def orcSink[B](path: String, typeString:String, overwrite: Boolean = false, check: Sink.OutputCheck = Sink.defaultOutputCheck)(implicit mB:Manifest[B], sc: ScoobiConfiguration) = {
+	val orcSerde = new OrcSerde
     val converter = new OutputConverter[NullWritable, Writable, B] {
-
-      def toKeyValue(x: B)(implicit configuration: Configuration) = {
-        val serde = new OrcSerde
+      def toKeyValue(x: B)(implicit configuration: Configuration) = { 
         val typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(typeString);
-        val oip: ObjectInspector = TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(typeInfo);
-        val row = serde.serialize(x, oip)
-        (NullWritable.get, row)
+      	val standardOI = TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(typeInfo).asInstanceOf[StructObjectInspector]
+      	val row = x.asInstanceOf[Tuple2[Any,Any]]
+      	val outputData:List[Any] = List(row._1,row._2)
+      	val out:java.util.List[Any] = outputData
+      	(NullWritable.get,orcSerde.serialize(out, standardOI))
       }
     }
-
     OrcSink[Writable, B](path, converter, overwrite, check)
   }
-
 }
 
 object OrcOutput extends OrcOutput
@@ -57,11 +56,13 @@ case class OrcSink[V, B](path: String,
   private implicit lazy val logger = LogFactory.getLog("scoobi.OrcOutput")
 
   lazy val output = new Path(path)
+  
+  val orcSerde = new OrcSerde
 
-  override def outputFormat(implicit sc: ScoobiConfiguration) = classOf[FileOutputFormat[NullWritable, Writable]]
+  def outputFormat(implicit sc: ScoobiConfiguration) = classOf[OrcNewOutputFormat]
 
   def outputKeyClass(implicit sc: ScoobiConfiguration) = classOf[NullWritable]
-  def outputValueClass(implicit sc: ScoobiConfiguration) = classOf[Writable]
+  def outputValueClass(implicit sc: ScoobiConfiguration) = orcSerde.getSerializedClass
 
   def outputCheck(implicit sc: ScoobiConfiguration) {
     check(output, overwrite, sc)
@@ -91,4 +92,13 @@ case class OrcSink[V, B](path: String,
   def compressWith(codec: CompressionCodec, compressionType: CompressionType = CompressionType.BLOCK) = copy(compression = Some(Compression(codec, compressionType)))
 
   override def toString = s"${getClass.getSimpleName}: ${outputPath(new ScoobiConfigurationImpl).getOrElse("none")}"
+  
+  private [scoobi]
+  override def write(values: Traversable[_], recordWriter: RecordWriter[_,_])(implicit configuration: Configuration) {
+    values foreach { value =>
+      val (k, v) = outputConverter.toKeyValue(value.asInstanceOf[B])
+      recordWriter.asInstanceOf[RecordWriter[NullWritable, Writable]].write(k, v)
+    }
+  }
+  
 }

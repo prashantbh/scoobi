@@ -7,28 +7,18 @@ import com.nicta.scoobi.core.Source
 import com.nicta.scoobi.core.InputConverter
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.io.NullWritable
-import org.apache.hadoop.io.NullWritable
-import org.apache.hadoop.hive.ql.io.orc.OrcStruct
 import org.apache.hadoop.hive.ql.io.orc.OrcNewInputFormat
+import org.apache.hadoop.hive.ql.io.orc.OrcStruct
 import com.nicta.scoobi.core.DataSource
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import com.nicta.scoobi.impl.plan.DListImpl
 import com.nicta.scoobi.impl.io.Files
-import org.apache.hadoop.hive.ql.io.orc.OrcNewInputFormat
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory
 import org.apache.hadoop.hive.serde2.objectinspector.StructField
 import scala.collection.JavaConversions._
-import org.apache.hadoop.hive.ql.io.orc.OrcNewInputFormat
-
-/** Type class for conversions between basic Scala types and Hadoop Writable types. */
-trait OrcSchema[A] {
-  def toWritable(x: A): OrcStruct
-  def fromWritable(x: OrcStruct): A
-  val mf: Manifest[OrcStruct]
-}
 
 trait OrcInput {
   def fromOrcFile[V: WireFormat: OrcSchema](paths: String*): DList[V] =
